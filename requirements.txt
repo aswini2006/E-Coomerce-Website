@@ -1,1 +1,23 @@
 
+### requirements.txt (Alternative Version)
+```text
+# Development Environment Requirements
+
+# For basic viewing:
+# - Modern web browser (Chrome 90+, Firefox 85+, Safari 14+)
+
+# For development:
+python==3.9.0          # For local server
+http-server==14.1.1     # Alternative Node server
+
+# Optional tools:
+nodejs==18.12.1         # For npm packages
+prettier==2.8.4         # Code formatting
+eslint==8.36.0          # JS linting
+
+# Testing:
+jest==29.4.1            # Unit testing
+cypress==12.7.0         # E2E testing
+
+# Note: The application itself has no dependencies
+# These are only for development and testing purposes
