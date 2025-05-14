@@ -18,3 +18,15 @@ A complete single-page e-commerce application with user and admin functionality 
 - HTML5
 - CSS3
 - JavaScript (ES6)
+## Demo Accounts
+Admin User:
+
+Email: admin@shop.com
+
+Password: admin123
+
+Regular User:
+
+Email: user@shop.com
+
+Password: user123
