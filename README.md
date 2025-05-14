@@ -18,15 +18,26 @@ A complete single-page e-commerce application with user and admin functionality 
 - HTML5
 - CSS3
 - JavaScript (ES6)
+  
 ## Demo Accounts
-Admin User:
+### Admin User:
 
 Email: admin@shop.com
 
 Password: admin123
 
-Regular User:
+### Regular User:
 
 Email: user@shop.com
 
 Password: user123
+
+## File Structure
+
+shopeasy-ecommerce/
+├── index.html        # Main application file
+├── README.md         # Project documentation
+└── requirements.txt  # Development requirements
+
+## License
+This project is open source and available under the MIT License.
