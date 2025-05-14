@@ -1,5 +1,5 @@
 
-### requirements.txt (Alternative Version)
+### requirements.txt 
 ```text
 # Development Environment Requirements
 
