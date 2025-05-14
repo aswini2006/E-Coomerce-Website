@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopEasy - E-commerce</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #f5f5f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 15px 0; margin-bottom: 20px; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: bold; }
+        nav ul { display: flex; list-style: none; }
+        nav ul li { margin-left: 20px; }
+        nav ul li a { color: white; text-decoration: none; }
+        nav ul li a:hover { text-decoration: underline; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .section { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .hidden { display: none; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .product-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; }
+        .product-image { width: 100%; height: 200px; object-fit: contain; }
+        .notification { position: fixed; top: 20px; right: 20px; background: #2ecc71; color: white; padding: 15px; border-radius: 4px; display: none; z-index: 1000; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">ShopEasy</div>
+            <nav>
+                <ul>
+                    <li><a href="#" onclick="showSection('home')">Home</a></li>
+                    <li><a href="#" onclick="showSection('products')">Products</a></li>
+                    <li><a href="#" onclick="showSection('cart')">Cart</a></li>
+                </ul>
+            </nav>
+            <div>
+                <button id="loginBtn" class="btn btn-primary" onclick="showSection('login')">Login</button>
+                <button id="logoutBtn" class="btn btn-danger hidden" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="notification" class="notification hidden"></div>
+
+        <!-- Home Section -->
+        <section id="home" class="section">
+            <h1>Welcome to ShopEasy</h1>
+            <div class="product-grid" id="featuredProducts"></div>
+        </section>
+
+        <!-- Login Section -->
+        <section id="login" class="section hidden">
+            <h2>Login</h2>
+            <form onsubmit="login(event)">
+                <div><label>Email:</label><input type="email" id="loginEmail" required></div>
+                <div><label>Password:</label><input type="password" id="loginPassword" required></div>
+                <button type="submit" class="btn btn-primary">Login</button>
+                <button type="button" class="btn" onclick="showSection('home')">Cancel</button>
+            </form>
+        </section>
+
+        <!-- Products Section -->
+        <section id="products" class="section hidden">
+            <h2>All Products</h2>
+            <div class="product-grid" id="productsGrid"></div>
+        </section>
+
+        <!-- Product Details -->
+        <section id="product-details" class="section hidden">
+            <div id="productDetailContent"></div>
+        </section>
+
+        <!-- Cart Section -->
+        <section id="cart" class="section hidden">
+            <h2>Your Cart</h2>
+            <div id="cartItems"></div>
+            <div id="cartTotal">Total: $0.00</div>
+            <button id="checkoutBtn" class="btn btn-success hidden" onclick="checkout()">Checkout</button>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" class="section hidden">
+            <h2>Admin Panel</h2>
+            <div>
+                <button class="btn btn-primary" onclick="showAdminSection('manage-products')">Manage Products</button>
+                <button class="btn btn-primary" onclick="showAdminSection('view-orders')">View Orders</button>
+            </div>
+            <div id="manage-products" class="admin-section">
+                <h3>Products</h3>
+                <button class="btn btn-success" onclick="showAddProduct()">Add Product</button>
+                <table id="adminProductsTable"></table>
+            </div>
+            <div id="add-product" class="admin-section hidden">
+                <h3>Add Product</h3>
+                <form onsubmit="addProduct(event)">
+                    <div><label>Name:</label><input type="text" id="productName" required></div>
+                    <div><label>Price:</label><input type="number" id="productPrice" required></div>
+                    <div><label>Stock:</label><input type="number" id="productStock" required></div>
+                    <div><label>Image URL:</label><input type="text" id="productImage" required></div>
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn" onclick="cancelAddProduct()">Cancel</button>
+                </form>
+            </div>
+            <div id="view-orders" class="admin-section hidden">
+                <h3>Orders</h3>
+                <table id="adminOrdersTable"></table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Data with actual image URLs
+        let users = [
+            { id: 1, email: "admin@shop.com", password: "admin123", isAdmin: true },
+            { id: 2, email: "user@shop.com", password: "user123", isAdmin: false }
+        ];
+        
+        let products = [
+            { 
+                id: 1, 
+                name: "Wireless Headphones", 
+                price: 99.99, 
+                stock: 50,
+                image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8aGVhZHBob25lc3xlbnwwfHwwfHx8MA%3D%3D"
+            },
+            { 
+                id: 2, 
+                name: "Smartphone", 
+                price: 599.99, 
+                stock: 30,
+                image: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c21hcnRwaG9uZXxlbnwwfHwwfHx8MA%3D%3D"
+            },
+            { 
+                id: 3, 
+                name: "Smart Watch", 
+                price: 199.99, 
+                stock: 25,
+                image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d2F0Y2h8ZW58MHx8MHx8fDA%3D"
+            },
+            { 
+                id: 4, 
+                name: "Laptop", 
+                price: 899.99, 
+                stock: 15,
+                image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bGFwdG9wfGVufDB8fDB8fHww"
+            }
+        ];
+        
+        let orders = [];
+        let cart = [];
+        let currentUser = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('home');
+            loadFeaturedProducts();
+        });
+
+        // Show section
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            if (sectionId === 'products') loadProducts();
+            if (sectionId === 'cart') loadCart();
+            if (sectionId === 'admin') showAdminSection('manage-products');
+        }
+
+        // Admin sections
+        function showAdminSection(sectionId) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            if (sectionId === 'manage-products') loadAdminProducts();
+            if (sectionId === 'view-orders') loadAdminOrders();
+        }
+
+        function showAddProduct() {
+            document.getElementById('manage-products').classList.add('hidden');
+            document.getElementById('add-product').classList.remove('hidden');
+        }
+
+        function cancelAddProduct() {
+            document.getElementById('add-product').classList.add('hidden');
+            document.getElementById('manage-products').classList.remove('hidden');
+        }
+
+        // Load products
+        function loadFeaturedProducts() {
+            const container = document.getElementById('featuredProducts');
+            container.innerHTML = products.slice(0, 3).map(product => `
+                <div class="product-card">
+                    <img src="${product.image}" alt="${product.name}" class="product-image">
+                    <h3>${product.name}</h3>
+                    <p>$${product.price.toFixed(2)}</p>
+                    <button class="btn btn-primary" onclick="showProduct(${product.id})">View</button>
+                </div>
+            `).join('');
+        }
+
+        function loadProducts() {
+            const container = document.getElementById('productsGrid');
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <img src="${product.image}" alt="${product.name}" class="product-image">
+                    <h3>${product.name}</h3>
+                    <p>$${product.price.toFixed(2)}</p>
+                    <button class="btn btn-primary" onclick="showProduct(${product.id})">View</button>
+                </div>
+            `).join('');
+        }
+
+        function showProduct(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+            
+            document.getElementById('productDetailContent').innerHTML = `
+                <h2>${product.name}</h2>
+                <img src="${product.image}" alt="${product.name}" style="width:100%;max-width:400px;">
+                <p>Price: $${product.price.toFixed(2)}</p>
+                <p>Stock: ${product.stock}</p>
+                <button class="btn btn-success" onclick="addToCart(${product.id})">Add to Cart</button>
+                <button class="btn" onclick="showSection('products')">Back</button>
+            `;
+            showSection('product-details');
+        }
+
+        // Cart functions
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product || product.stock < 1) return;
+            
+            const existing = cart.find(item => item.id === productId);
+            if (existing) existing.quantity++;
+            else cart.push({ id: productId, quantity: 1, price: product.price, name: product.name, image: product.image });
+            
+            showNotification(`${product.name} added to cart`);
+            loadCart();
+        }
+
+        function loadCart() {
+            const container = document.getElementById('cartItems');
+            if (cart.length === 0) {
+                container.innerHTML = "<p>Your cart is empty</p>";
+                document.getElementById('checkoutBtn').classList.add('hidden');
+                document.getElementById('cartTotal').textContent = 'Total: $0.00';
+                return;
+            }
+            
+            let total = 0;
+            container.innerHTML = cart.map(item => {
+                const product = products.find(p => p.id === item.id);
+                if (!product) return '';
+                total += item.quantity * product.price;
+                return `
+                    <div style="display:flex; justify-content:space-between; margin:10px 0; align-items:center;">
+                        <img src="${product.image}" alt="${product.name}" style="width:50px;height:50px;object-fit:contain;">
+                        <div style="flex-grow:1; padding:0 15px;">
+                            <div>${product.name}</div>
+                            <div>$${product.price.toFixed(2)} x ${item.quantity}</div>
+                        </div>
+                        <div>$${(item.quantity * product.price).toFixed(2)}</div>
+                        <button class="btn btn-danger" onclick="removeFromCart(${item.id})">X</button>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('cartTotal').textContent = `Total: $${total.toFixed(2)}`;
+            document.getElementById('checkoutBtn').classList.remove('hidden');
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            loadCart();
+            showNotification("Item removed from cart");
+        }
+
+        function checkout() {
+            if (!currentUser || cart.length === 0) return;
+            
+            const total = cart.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            orders.push({
+                id: orders.length + 1,
+                userId: currentUser.id,
+                date: new Date().toLocaleDateString(),
+                total: total,
+                items: [...cart]
+            });
+            
+            cart = [];
+            showNotification("Order placed successfully!");
+            showSection('home');
+        }
+
+        // Admin functions
+        function loadAdminProducts() {
+            const table = document.getElementById('adminProductsTable');
+            table.innerHTML = `
+                <tr><th>ID</th><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+                ${products.map(p => `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td><img src="${p.image}" style="width:50px;height:50px;object-fit:contain;"></td>
+                        <td>${p.name}</td>
+                        <td>$${p.price.toFixed(2)}</td>
+                        <td>${p.stock}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            `;
+        }
+
+        function addProduct(e) {
+            e.preventDefault();
+            const newProduct = {
+                id: products.length + 1,
+                name: document.getElementById('productName').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                stock: parseInt(document.getElementById('productStock').value),
+                image: document.getElementById('productImage').value
+            };
+            products.push(newProduct);
+            cancelAddProduct();
+            loadAdminProducts();
+            loadProducts();
+            loadFeaturedProducts();
+            showNotification("Product added");
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id);
+            loadAdminProducts();
+            loadProducts();
+            loadFeaturedProducts();
+            showNotification("Product deleted");
+        }
+
+        function loadAdminOrders() {
+            const table = document.getElementById('adminOrdersTable');
+            table.innerHTML = `
+                <tr><th>ID</th><th>User</th><th>Date</th><th>Total</th><th>Items</th></tr>
+                ${orders.map(o => `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>User ${o.userId}</td>
+                        <td>${o.date}</td>
+                        <td>$${o.total.toFixed(2)}</td>
+                        <td>${o.items.map(i => `${i.quantity}x ${products.find(p => p.id === i.id)?.name || 'Unknown'}`).join(', ')}</td>
+                    </tr>
+                `).join('')}
+            `;
+        }
+
+        // Auth functions
+        function login(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const user = users.find(u => u.email === email && u.password === password);
+            if (!user) {
+                showNotification("Invalid credentials", "error");
+                return;
+            }
+            
+            currentUser = user;
+            document.getElementById('loginBtn').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            
+            if (user.isAdmin) {
+                showSection('admin');
+            } else {
+                showSection('home');
+            }
+            
+            showNotification("Login successful");
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginBtn').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            showSection('home');
+            showNotification("Logged out");
+        }
+
+        // Helper functions
+        function showNotification(message, type = "success") {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.backgroundColor = type === "error" ? "#e74c3c" : "#2ecc71";
+            notification.classList.remove('hidden');
+            setTimeout(() => notification.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
